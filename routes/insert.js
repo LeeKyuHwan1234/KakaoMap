@@ -121,7 +121,7 @@ router.get('/', function(req, res, next) {
             for (let s in result3[0]) {
                 console.log(result3[0][s])
             }
-            client.query(`INSERT INTO openapi SET ('asd','asdasd') `, (err, res) => {
+            client.query(`INSERT INTO users(uid, uname) VALUES ('${result3[0][0]}','${result3[0][1]}')`, (err, res) => {
                        console.log('insert success');
                        client.end();
             })
