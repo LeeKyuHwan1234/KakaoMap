@@ -13,11 +13,11 @@ router.get('/', function(req, res, next) {
     let dd = {};
     let url = 'http://api.visitkorea.or.kr/openapi/service/rest/GoCamping/searchList'
     var queryParams = '?' + encodeURIComponent('serviceKey') + '='+'8MHEoHSGSBOiionhFfjrXfD9UVbr5goBsMUq1rUmUvC2NbpqAX%2FjrheczsfnDWNCQ7HVqXUXPqN7vYmcjf2%2BFA%3D%3D'; /*Service Key*/
-    queryParams += '&' + encodeURIComponent('pageNo') + '=' + encodeURIComponent('1'); /**/
-    queryParams += '&' + encodeURIComponent('numOfRows') + '=' + encodeURIComponent('5'); /**/
+    queryParams += '&' + encodeURIComponent('pageNo') + '=' + encodeURIComponent('17'); /**/
+    queryParams += '&' + encodeURIComponent('numOfRows') + '=' + encodeURIComponent('100'); /**/
     queryParams += '&' + encodeURIComponent('MobileOS') + '=' + encodeURIComponent('WIN'); /**/
     queryParams += '&' + encodeURIComponent('MobileApp') + '=' + encodeURIComponent('AppTest'); /**/
-    queryParams += '&' + encodeURIComponent('keyword') + '=' + encodeURIComponent('대'); /**/
+    queryParams += '&' + encodeURIComponent('keyword') + '=' + encodeURIComponent('캠'); /**/
     xhr.open('GET', url + queryParams);
     xhr.onreadystatechange = function () {
         if (this.readyState == 4) {
@@ -25,15 +25,11 @@ router.get('/', function(req, res, next) {
             var xmlToJson = convert.xml2json(result, {compact: true, spaces: 4});
             var jsondata = JSON.parse(xmlToJson);
             var result3 = [];
-            
+            console.log(jsondata.response.body.totalCount)
             const items = jsondata.response.body.items.item;
             dd = {items}
-
+               
             dd.items.forEach((item)=>{
-                // const keys = Object.keys(item)
-                //     for( var key in keys) {
-                //         result3.push(item.hasOwnProperty(keys[key]) ? item[keys[key]]._text : "false");
-                //     }
                 result3.push([
                     item.hasOwnProperty('contentId') ? item.contentId._text : "no data",
                     item.hasOwnProperty('facltNm') ? item.facltNm._text : "no data",
@@ -51,9 +47,9 @@ router.get('/', function(req, res, next) {
                     item.hasOwnProperty('hvofEnddle') ? item.hvofEnddle._text : "no data",
                     item.hasOwnProperty('featureNm') ? item.featureNm._text : "no data",
                     item.hasOwnProperty('induty') ? item.induty._text : "no data",
-                    item.hasOwnProperty('lctC') ? item.lctC._text : "no data",
+                    item.hasOwnProperty('lctCl') ? item.lctCl._text : "no data",
                     item.hasOwnProperty('doNm') ? item.doNm._text : "no data",
-                    item.hasOwnProperty('sigunguNm') ?   item.sigunguNm._text : "no data",
+                    item.hasOwnProperty('sigunguNm') ? item.sigunguNm._text : "no data",
                     item.hasOwnProperty('zipcode') ? item.zipcode._text : "no data",
                     item.hasOwnProperty('addr1') ?  item.addr1._text : "no data",
                     item.hasOwnProperty('addr2') ? item.addr2._text : "no data",
@@ -117,15 +113,34 @@ router.get('/', function(req, res, next) {
                     item.hasOwnProperty('createdtime') ? item.createdtime._text : "no data",
                     item.hasOwnProperty('modifiedtime') ? item.modifiedtime._text : "no data"
                 ])
-            })
-            for (let s in result3[0]) {
-                console.log(result3[0][s])
-            }
-            client.query(`INSERT INTO users(uid, uname) VALUES ('${result3[0][0]}','${result3[0][1]}')`, (err, res) => {
-                       console.log('insert success');
-                       client.end();
-            })
-            res.render('insert',{"data":result3})  
+            })  
+
+            for (var m =0; m < result3.length; m++) {
+                var obj = "";
+                var strResult = JSON.stringify(result3[m])
+                var strContentid = result3[m][0]
+                var asdSliceEnd = strResult.slice(0,-1);
+                var asdSliceStart =asdSliceEnd.slice(1);
+                var asdReplace = asdSliceStart.replaceAll(`"`, `'`)
+                client.query(`
+                INSERT INTO openapi(
+                    contentid,facltnm,lineintro,intro,allar,insrncat,trsagntno,bizrno,facltdivnm,mangedivnm,
+                    mgcdiv,managesttus, hvofbgnde,hvofenddle,featurenm,induty,lctcl,
+                    donm,sigungunm,zipcode,addr1,addr2,mapx,mapy,direction, tel,homepage,resveurl,resvecl,
+                    managenmpr,gnrlsiteco,autositeco,glampsiteco,caravsiteco,indvdlcaravsiteco,sitedstnc,
+                    sitemg1width,sitemg2width,sitemg3width,sitemg1vrticl,sitemg2vrticl,sitemg3vrticl,sitemg1co,
+                    sitemg2co,sitemg3co,sitebottomcl1,sitebottomcl2,sitebottomcl3,sitebottomcl4,
+                    sitebottomcl5,tooltip,glampinnerfclty,caravinnerfclty,prmisnde,operpdcl,operdecl,
+                    trleracmpnyat,caravacmpnyat,toiletco,swrmco,wtrplco,braziercl,sbrscl,
+                    sbrsetc,posblfcltycl,posblfcltyetc,cltureventat,clturevent,exprnprogrmat,exprnprogrm,extshrco,frprvtwrppco,frprvtsandco,
+                    firesensorco,themaenvrncl,eqpmnlendcl,animalcmgcl,toureracl,firstimageurl,createdtime,modifiedtime) 
+                VALUES (${asdReplace})
+                ON CONFLICT(contentid)
+                DO NOTHING `, (err, res) => {
+                })
+             }
+            res.render('insert',{"data":result3, "total":
+            jsondata.response.body.totalCount})  
         }
     };
     xhr.send('');
@@ -148,3 +163,10 @@ module.exports = router;
             //     temps.push(item.hasOwnProperty(keys[key]) ? item[keys[key]]._text : "false");
             // })
             //result3.push(temps[0]);
+
+
+            
+            // const keys = Object.keys(item)
+            //     for( var key in keys) {
+            //         result3.push(item.hasOwnProperty(keys[key]) ? item[keys[key]]._text : "false");
+            //     }
